@@ -1,0 +1,20 @@
+<%= content_for(:page_actions) do %>
+  <%= render("shared/new_resource_page_action", path: new_dashboard_settings_user_path) %>
+<% end %>
+
+<%= render "dashboard/settings/frame" do %>
+  <div class="card-header">
+    <h2 class="mb-0"><%= title %></h2>
+  </div>
+
+  <%= render("shared/table_data", collection: @users, headers: [:name, :email]) do |user| %>
+    <td>
+      <%= link_to(user.name, dashboard_settings_user_path(user)) %>
+    </td>
+    <td>
+      <%= user.email %>
+    </td>
+  <% end %>
+
+  <%= render("shared/pagination", resources: @users) %>
+<% end %>

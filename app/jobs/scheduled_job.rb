@@ -1,38 +1,47 @@
 class ScheduledJob < ApplicationJob
-  queue_as Rails.configuration.app_settings.fetch(:aws_sqs_high_priority_queue_name)
+  queue_as AppSettings.fetch(:aws_sqs_high_priority_queue_name)
 
   def perform
     Account.find_each do |account|
-      queue_phone_calls(account)
+      queue_delivery_attempts(account)
     end
 
-    fetch_unknown_call_statuses
-    retry_callout_populations
+    update_delivery_attempts
+    complete_broadcasts
   end
 
   private
 
-  def queue_phone_calls(account)
-    phone_calls = account.phone_calls
-                         .created.joins(:callout)
-                         .merge(Callout.running)
-                         .limit(account.phone_call_queue_limit)
+  def queue_delivery_attempts(account)
+    delivery_attempts = DeliveryAttempt.where(status: :created).where(broadcast_id: account.broadcasts.where(status: :running).select(:id))
 
-    phone_calls.find_each do |phone_call|
-      phone_call.queue!
-      QueueRemoteCallJob.perform_later(phone_call)
+    delivery_attempts.joins(:notification).order("notifications.priority").limit(account.delivery_attempt_queue_limit).each do |delivery_attempt|
+      delivery_attempt.transition_to!(:queued)
+      InitiateDeliveryAttemptJob.perform_later(delivery_attempt)
     end
   end
 
-  def fetch_unknown_call_statuses
-    PhoneCall.to_fetch_remote_status.find_each do |phone_call|
-      FetchRemoteCallJob.perform_later(phone_call)
-      phone_call.touch(:remote_status_fetch_queued_at)
+  def update_delivery_attempts
+    delivery_attempts_with_unknown_status.find_each do |delivery_attempt|
+      UpdateDeliveryAttemptStatusJob.perform_later(delivery_attempt)
+    end
+
+    delivery_attempts_with_unknown_status.update_all(status_update_queued_at: Time.current)
+  end
+
+  def complete_broadcasts
+    Broadcast.where(status: :running).find_each do |broadcast|
+      if broadcast.channel_capabilities.any?(&:deliverable?)
+        broadcast.transition_to(:completed, touch: :completed_at) if broadcast.notifications.where(status: :pending).none?
+      else
+        broadcast.transition_to(:completed, touch: :completed_at)
+      end
     end
   end
 
-  def retry_callout_populations
-    callout_populations = BatchOperation::CalloutPopulation.running.where("updated_at < ?", 15.minutes.ago)
-    callout_populations.find_each(&:requeue!)
+  def delivery_attempts_with_unknown_status
+    DeliveryAttempt.where(status: :initiated, initiated_at: ..10.minutes.ago).merge(
+      DeliveryAttempt.where(status_update_queued_at: nil).or(DeliveryAttempt.where(status_update_queued_at: ..15.minutes.ago))
+    )
   end
 end

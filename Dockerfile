@@ -1,42 +1,73 @@
-FROM ruby:2.7-alpine AS build-env
+# syntax = docker/dockerfile:1
 
-ARG APP_ROOT="/app"
-ENV BUNDLE_APP_CONFIG="/app/.bundle"
+# Make sure RUBY_VERSION matches the Ruby version in .tool-versions
+ARG RUBY_VERSION=4
+FROM public.ecr.aws/docker/library/ruby:$RUBY_VERSION-alpine AS base
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --update --no-cache build-base git postgresql-dev nodejs yarn && \
-    gem install bundler
+# Rails app lives here
+WORKDIR /rails
 
-RUN mkdir -p $APP_ROOT
-WORKDIR $APP_ROOT
+# Set production environment
+ENV RAILS_ENV="production" \
+  BUNDLE_DEPLOYMENT="1" \
+  BUNDLE_PATH="/usr/local/bundle" \
+  BUNDLE_WITHOUT="development test"
 
-COPY Gemfile Gemfile.lock package.json yarn.lock $APP_ROOT/
+# Throw-away build stage to reduce size of final image
+FROM base AS build
 
-RUN bundle config --local deployment true && \
-    bundle config --local path "vendor/bundle" && \
-    bundle config --local without 'development test'
+# Install packages needed to build gems
+RUN apk update --no-cache && \
+  apk upgrade --no-cache && \
+  apk add --update --no-cache build-base git gcompat postgresql-dev vips-dev yaml-dev nodejs-current npm
 
-RUN bundle install --jobs 20 --retry 5
-RUN yarn install --frozen-lockfile
+RUN npm install -g corepack
+RUN corepack enable
+RUN corepack prepare yarn@stable --activate
+
+# Install application gems
+COPY Gemfile Gemfile.lock ./
+
+RUN bundle install && \
+  rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
+  find "${BUNDLE_PATH}" -name "*.o" -delete && find "${BUNDLE_PATH}" -name "*.c" -delete && \
+  mkdir -p tmp/pids && \
+  mkdir -p storage && \
+  mkdir -p log && \
+  bundle exec bootsnap precompile --gemfile
+
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install || (find /tmp -name build.log -exec cat {} \; && false)
+
+# Copy application code
 COPY . .
-RUN bundle exec rails assets:precompile
-RUN mkdir -p tmp/pids
-RUN rm -rf vendor/bundle/ruby/*/cache/ && find vendor/ -name "*.o" -delete && find vendor/ -name "*.c"
 
-FROM ruby:2.7-alpine
+# Precompile bootsnap code for faster boot times
+RUN bundle exec bootsnap precompile app/ lib/
 
-ARG APP_ROOT="/app"
-ENV BUNDLE_APP_CONFIG="/app/.bundle"
+# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
+RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
-WORKDIR $APP_ROOT
+# Final stage for app image
+FROM base
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --update --no-cache build-base postgresql-dev && \
-    gem install bundler
+# Install packages needed for deployment
+RUN apk update --no-cache && \
+  apk upgrade --no-cache && \
+  apk add --update --no-cache gcompat postgresql-dev vips ffmpeg
 
-COPY --from=build-env $APP_ROOT $APP_ROOT
+# Copy built artifacts: gems, application
+COPY --from=build --link /usr/local/bundle/ /usr/local/bundle/
+COPY --from=build --link /rails/ /rails/
 
-EXPOSE 3000
-CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
+# Run and own only the runtime files as a non-root user for security
+RUN addgroup -S -g 1000 rails && \
+  adduser -u 1000 -D -G rails rails && \
+  chown -R rails:rails db storage log tmp
+
+USER 1000:1000
+ENV RUBY_YJIT_ENABLE=true
+
+# Start server via Thruster by default, this can be overwritten at runtime
+EXPOSE 80
+CMD ["./bin/thrust", "./bin/rails", "server"]

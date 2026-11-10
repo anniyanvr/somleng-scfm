@@ -1,95 +1,44 @@
 ---
 en:
-  breadcrumbs:
-    accounts:
-      edit: Settings
-    defaults:
-      edit: Edit
-      more: More
-      new: New
-      show: "%{id}"
   titles:
-    access_tokens:
-      edit: Edit API Key
-      index: API Keys
-      new: New API Key
-    accounts:
-      edit: Account Settings
-      update: Account Settings
+    app_name: OpenEWS
     actions:
-      back: Back
-      cancel: Cancel
-      data_confirm: Are you sure?
-      delete: Delete
-      edit: Edit
-      preview: Preview
-      refresh: Refresh
-      update: Edit
-    app_name: Somleng SCFM
-    batch_operations:
-      index: Batch Operations
-      queue: Start
-      requeue: Restart
-      show: Batch Operation %{id}
-    callout_participations:
-      index: Callout Participations
-      show: Callout Participation %{id}
-    callout_populations:
-      create: New Callout Population
-      edit: Edit Callout Population
-      new: New Callout Population
-      show: Callout Population %{id}
-      update: Edit Callout Population
-    callouts:
-      create: New Callout
-      edit: Edit Callout
-      index: Callouts
-      new: New Callout
-      resume_callout: Resume Callout
-      show: Callout %{id}
-      start_callout: Start Callout
-      stop_callout: Stop Callout
-      summary: Callout Summary
-      update: Edit Callout
-    contacts:
-      create: New Contact
-      edit: Edit Contact
-      index: Contacts
-      new: New Contact
-      show: Contact %{id}
-      update: Edit Contact
+      start_broadcast: "You are about to start the broadcast. Are you sure you want to proceed?"
+      start_broadcast_with_count: "You are about to start the broadcast. This will reach approximately %{count}. Are you sure you want to proceed?"
+      confirm: "Are you sure?"
+      reset_2fa: "Reset 2FA"
+      no_filters_export: "You haven't selected any filters. Are you sure you still want to export all records?"
+      download: "Download"
     home:
-      about_us: About Us
-      contact: Contact
-      dashboard: Dashboard
-      index: Home
-    phone_calls:
-      index: Phone Calls
-      queue: Send
-      queue_remote_fetch: Fetch Remote Status
-      show: Phone Call %{id}
-    remote_phone_call_events:
-      index: Phone Call Events
-      show: Phone Call Event %{id}
-    user_invitations:
-      create: Invite User
-      edit: Set your password
-      new: Invite User
-      update: Set your password
-    user_passwords:
-      create: Forgot your password?
-      edit: Change Password
+      index: Dashboard
+    broadcasts:
+      new: New Broadcast
+    beneficiaries:
+      new: New Beneficiary
+    beneficiary_groups:
+      index: Beneficiary Groups
+      new: New Beneficiary Group
+    sessions:
+      new: Sign in
+    settings:
+      index: Settings
+    registrations:
+      edit: Edit Profile
+    forgot_subdomain:
+      new: Forgot your subdomain?
+    passwords:
       new: Forgot your password?
-      update: Save
-    user_registrations:
-      edit: Change Password
-      update: Save
-    user_sessions:
-      create: Sign In
-      destroy: Sign Out
-      new: Sign In
-    users:
-      edit: Edit User
-      index: Users
-      show: User %{id}
-      update: Edit User
+      create: Forgot your password?
+      edit: Change your password
+    confirmations:
+      new: Resend confirmation instructions
+      create: Resend confirmation instructions
+    developers:
+      show: Developers
+    two_factor_authentications:
+      new: Setup Two-Factor Authentication (2FA)
+    broadcast_notifications:
+      index: "Notifications for broadcast #%{broadcast}"
+    beneficiary_group_memberships:
+      index: "Memberships for&nbsp;%{beneficiary_group}"
+    no_records: "No records found."

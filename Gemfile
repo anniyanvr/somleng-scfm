@@ -1,65 +1,91 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-gem "rails", "~> 6.1.0"
+gem "rails", "~> 8.1"
 
-gem "aasm", github: "aasm/aasm"
-gem "after_commit_everywhere"
-gem "api-pagination", github: "davidcelis/api-pagination"
+# The modern frontend packages for Rails
+gem "propshaft"
+gem "cssbundling-rails"
+gem "jsbundling-rails"
+gem "stimulus-rails"
+gem "turbo-rails"
+
+# NOTE: date-select helper to support other locales other than `en`
+# https://github.com/heartcombo/simple_form/issues/1148
+gem "rails-i18n", "~> 8.1.0"
+
+# Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
+# gem "solid_cache"
+# gem "solid_queue"
+# gem "solid_cable"
+
+# Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
+# gem "kamal", require: false
+
+# Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
+gem "thruster", require: false
+
+gem "aws-sdk-cloudwatch"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3", require: false
 gem "aws-sdk-sqs"
-gem "bitmask_attributes", github: "numerex/bitmask_attributes"
+gem "aws-actionmailer-ses"
+gem "active_storage_validations"
+gem "baan"
 gem "bootsnap", require: false
-gem "breadcrumbs_on_rails"
-gem "cocoon"
+gem "bootstrap-email", "1.8.1"
+gem "countries"
+gem "country_select"
+gem "cursor_paginator"
+gem "csv"
 gem "devise"
-gem "devise-async"
 gem "devise_invitable"
+gem "devise-two-factor"
 gem "doorkeeper"
-gem "down"
 gem "dry-validation"
+gem "enumerize"
 gem "faraday"
 gem "file_validators"
-gem "haml-rails"
-gem "jbuilder", "~> 2.5"
+gem "gaun"
+gem "image_processing"
+gem "jsonapi-serializer"
+gem "jwt"
 gem "kaminari"
 gem "lograge"
 gem "okcomputer"
 gem "pg"
 gem "phony"
-gem "phony_rails"
+gem "pundit"
 gem "puma"
 gem "pumi"
 gem "record_tag_helper", github: "rails/record_tag_helper"
-gem "responders"
-gem "sassc-rails"
+gem "responders", github: "heartcombo/responders"
+gem "rqrcode"
+gem "ruby-vips"
 gem "sentry-rails"
-gem "sentry-ruby"
 gem "shoryuken"
+gem "show_for"
 gem "simple_form"
-gem "skylight"
-gem "strip_attributes"
-gem "turbolinks", "~> 5"
 gem "twilio-ruby"
 gem "tzinfo-data"
-gem "webpacker"
 
 group :development, :test do
-  gem "i18n-tasks"
+  gem "bundler-audit", require: false
   gem "pry"
   gem "rspec_api_documentation", github: "zipmark/rspec_api_documentation"
   gem "rspec-rails"
-  gem "rubocop"
-  gem "rubocop-performance"
-  gem "rubocop-rails"
-  gem "rubocop-rspec"
 end
 
 group :development do
-  gem "spring"
-  gem "spring-commands-rspec"
-  gem "web-console", ">= 3.3.0"
+  gem "listen"
+  gem "foreman"
+  gem "rubocop"
+  gem "rubocop-performance"
+  gem "rubocop-rails-omakase", require: false
+  gem "rubocop-rspec", require: false
+
+  # Enhanced LSP support for Ruby and RSpec in VSCode
+  gem "ruby-lsp-rspec", require: false
 end
 
 group :test do
@@ -67,10 +93,8 @@ group :test do
   gem "email_spec"
   gem "factory_bot_rails"
   gem "rails-controller-testing"
-  gem "shoulda-matchers"
-  gem "simplecov", require: false
-  gem "simplecov-lcov", require: false
-  gem "webdrivers"
+  gem "selenium-webdriver"
+  gem "simplecov"
+  gem "simplecov-cobertura"
   gem "webmock"
-  gem "wisper-rspec"
 end

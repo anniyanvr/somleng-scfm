@@ -1,0 +1,25 @@
+<%= render("shared/profile_frame") do %>
+  <div class="card-header">
+    <h2 class="mb-0"><%= title %></h2>
+  </div>
+
+  <%= render("shared/table_data", collection: @imports, headers: [:import, :import_type, :status, :error_message, :created_at]) do |import| %>
+    <td>
+      <%= link_to import.file.filename, rails_blob_path(import.file, disposition: "attachment") %>
+    </td>
+    <td>
+      <%= import.resource_type.humanize %>
+    </td>
+    <td>
+      <%= import_status(import) %>
+    </td>
+    <td>
+      <%= import.error_message %>
+    </td>
+    <td>
+      <%= local_time(import.created_at) %>
+    </td>
+  <% end %>
+
+  <%= render("shared/pagination", resources: @imports) %>
+<% end %>

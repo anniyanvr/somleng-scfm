@@ -1,0 +1,29 @@
+---
+ne:
+  filter_operators:
+    eq: "बराबर"
+    not_eq: "बराबर छैन"
+    contains: "सामेल छ"
+    not_contains: "सामेल छैन"
+    starts_with: "सुरु हुन्छ"
+    gt: "ठूलो छ"
+    gteq: "ठूलो वा बराबर"
+    lt: "सानो छ"
+    lteq: "सानो वा बराबर"
+    between: "बीचमा"
+    is_null: "NULL हो"
+    in: "भित्र"
+    not_in: "भित्र छैन"
+  past_participles:
+    registered: "दर्ता"
+    delivered: "पठाइयो"
+    issued: "सिर्जना"
+  statuses:
+    failed: "असफल"
+    succeeded: "सफल"
+    pending: "प्रतीक्षामा"
+  units:
+    day: "दिन"
+    month: "महिना"
+    year: "वर्ष"
+  count_of_total: "%{total} मध्ये %{count}"

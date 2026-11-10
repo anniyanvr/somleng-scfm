@@ -1,0 +1,58 @@
+<% content_for(:page_actions) do %>
+  <%= render("shared/edit_resource_page_action", path: edit_dashboard_beneficiary_path(@beneficiary)) %>
+
+  <%= render "shared/resource_related_links" do %>
+    <%= render("shared/destroy_resource_page_action", path: dashboard_beneficiary_path(@beneficiary)) %>
+  <% end %>
+<% end %>
+
+<div class="card">
+  <div class="card-body">
+    <%= show_for(@beneficiary) do |f| %>
+      <%= f.attribute :id %>
+      <%= f.attribute :phone_number, value: format_phone_number(@beneficiary.phone_number) %>
+      <%= f.attribute :iso_country_code, value: country_name(@beneficiary.iso_country_code) %>
+      <%= f.attribute :gender, value: @beneficiary.gender_text %>
+      <%= f.attribute :iso_language_code %>
+      <%= f.attribute :date_of_birth %>
+      <%= f.attribute :disability_status, value: @beneficiary.disability_status_text %>
+      <%= f.attribute :status, value: @beneficiary.status_text %>
+      <%= f.attribute :groups do %>
+        <% @beneficiary.groups.each do |group| %>
+          <span class="badge bg-default-lt"><%= link_to(group.name, dashboard_beneficiary_group_path(group)) %></span>
+        <% end %>
+      <% end %>
+
+      <%= f.attribute :created_at, value: local_time(@beneficiary.created_at) %>
+      <%= f.attribute :updated_at, value: local_time(@beneficiary.updated_at) %>
+
+      <%= f.attribute :metadata do %>
+        <% if @beneficiary.metadata.present? %>
+          <%= text_area_tag(:metadata, JSON.pretty_generate(@beneficiary.metadata), rows: 4, class: "form-control w-100", readonly: true) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @beneficiary.addresses.present? %>
+      <div class="hr-text">Addresses</div>
+
+      <% @beneficiary.addresses.each_with_index do |address, index| %>
+        <% if index > 0 %>
+          <div class="hr"></div>
+        <% end %>
+
+        <%= show_for(address) do |address_fields| %>
+          <%= address_fields.attribute :iso_region_code %>
+          <%= address_fields.attribute :administrative_division_level_2_code %>
+          <%= address_fields.attribute :administrative_division_level_2_name %>
+          <%= address_fields.attribute :administrative_division_level_3_code %>
+          <%= address_fields.attribute :administrative_division_level_3_name %>
+          <%= address_fields.attribute :administrative_division_level_4_code %>
+          <%= address_fields.attribute :administrative_division_level_4_name %>
+          <%= address_fields.attribute :administrative_division_level_5_code %>
+          <%= address_fields.attribute :administrative_division_level_5_name %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

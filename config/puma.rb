@@ -14,7 +14,10 @@ port        ENV.fetch("PORT") { 3000 }
 
 # Specifies the `environment` that Puma will run in.
 #
-environment ENV.fetch("RAILS_ENV") { "development" }
+
+env = ENV.fetch("RAILS_ENV") { "development" }
+
+environment env
 
 # Specifies the `pidfile` that Puma will use.
 pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
@@ -25,7 +28,12 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 # Workers do not work on JRuby or Windows (both of which do not support
 # processes).
 #
-workers ENV.fetch("WEB_CONCURRENCY") { `grep -c processor /proc/cpuinfo` || 1 }
+
+if env == "development"
+  workers 0
+else
+  workers ENV.fetch("WEB_CONCURRENCY") { Etc.nprocessors rescue 1  }
+end
 
 # Use the `preload_app!` method when specifying a `workers` number.
 # This directive tells Puma to first boot the application and load code
@@ -34,5 +42,8 @@ workers ENV.fetch("WEB_CONCURRENCY") { `grep -c processor /proc/cpuinfo` || 1 }
 #
 # preload_app!
 
-# Allow puma to be restarted by `rails restart` command.
+# Run the Solid Queue supervisor inside of Puma for single-server deployments
+plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+
+# Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart

@@ -8,45 +8,53 @@ require "action_controller/railtie"
 require "action_view/railtie"
 require "action_mailer/railtie"
 require "active_job/railtie"
-require "sprockets/railtie"
-# require "action_cable/engine"
+require "action_cable/engine"
+# require "sprockets/railtie"
 # require "action_mailbox/engine"
 # require "action_text/engine"
 # require "rails/test_unit/railtie"
-
-require_relative "../app/middleware/rack/somleng_webhook_authentication"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module SomlengScfm
+module OpenEWS
   class Application < Rails::Application
     # Use the responders controller from the responders gem
     config.app_generators.scaffold_controller :responders_controller
 
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.1
+    config.load_defaults 8.1
 
-    config.eager_load_paths << Rails.root.join("lib")
+     # Please, add to the `ignore` list any other `lib` subdirectories that do
+     # not contain `.rb` files, or that should not be reloaded or eager loaded.
+     # Common ones are `templates`, `generators`, or `middleware`, for example.
+     config.autoload_lib(ignore: %w[assets tasks templates])
 
-    # Settings in config/environments/* take precedence over those specified here.
-    # Application configuration can go into files in config/initializers
-    # -- all .rb files in that directory are automatically loaded after loading
-    # the framework and any gems in your application.
+
+    # Configuration for the application, engines, and railties goes here.
+    #
+    # These settings can be overridden in specific environments using the files
+    # in config/environments, which are processed later.
+    #
+    # config.time_zone = "Central Time (US & Canada)"
+    # config.eager_load_paths << Rails.root.join("extras")
+
+    # Don't generate system test files.
+    config.generators.system_tests = nil
 
     config.app_settings = config_for(:app_settings)
     config.active_job.default_queue_name = config.app_settings.fetch(:aws_sqs_default_queue_name)
-    Rails.application.routes.default_url_options[:host] = config.app_settings.fetch(:default_url_host)
+    Rails.application.routes.default_url_options[:host] = config.app_settings.fetch(:app_url_host)
+    config.action_mailer.default_url_options = { host: config.app_settings.fetch(:app_url_host) }
 
-    config.middleware.use(
-      Rack::SomlengWebhookAuthentication,
-      nil,
-      "api/remote_phone_call_events",
-      methods: :post
-    ) do |account_sid|
-      account = Account.find_by_platform_account_sid(account_sid)
-      account&.platform_auth_token(account_sid)
-    end
+    config.exceptions_app = self.routes
+
+    encryption_config = config.app_settings.fetch(:active_record_encryption)
+    config.active_record.encryption.primary_key = encryption_config.fetch(:primary_key)
+    config.active_record.encryption.deterministic_key = encryption_config.fetch(:deterministic_key)
+    config.active_record.encryption.key_derivation_salt = encryption_config.fetch(:key_derivation_salt)
   end
 end
+
+require "simple_form_components"

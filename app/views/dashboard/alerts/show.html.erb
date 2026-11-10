@@ -1,0 +1,146 @@
+<% content_for(:page_actions) do %>
+  <% if FeatureFlag.enabled_for?(current_user, :alert_approval) && @alert.approval_status.pending_approval? %>
+    <%= button_to(
+      dashboard_alert_path(@alert.id, alert: { approval_status: "approved" } ),
+      method: :patch,
+      class: "btn btn-outline-success",
+      form_class: "d-inline",
+      form: {
+        data: {
+          turbo_confirm: "Are you sure?"
+        }
+      }
+    ) do %>
+      <i class="icon ti ti-check"></i>
+      Approve
+    <% end %>
+
+    <%= button_to(
+      dashboard_alert_path(@alert.id, alert: { approval_status: "rejected" } ),
+      method: :patch,
+      class: "btn btn-outline-danger",
+      form_class: "d-inline",
+      form: {
+        data: {
+          turbo_confirm: "Are you sure?"
+        }
+      }
+    ) do %>
+      <i class="icon ti ti-alert-triangle"></i>
+      Reject
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="card">
+  <div class="card-body">
+    <%= show_for(@alert) do |f| %>
+      <%= f.attribute :id %>
+      <%= f.attribute :event do %>
+        <%= badge(text: @alert.event.humanize, color: alert_badge(@alert.event).color, icon: alert_badge(@alert.event).icon) %>
+      <% end %>
+      <%= f.attribute :approval_status do %>
+        <%= badge(text: @alert.approval_status.humanize, color: alert_badge(@alert.approval_status).color, icon: alert_badge(@alert.approval_status).icon) %>
+      <% end %>
+      <%= f.attribute :reviewed_by %>
+      <%= f.attribute :reviewed_at, value: local_time(@alert.reviewed_at) %>
+      <%= f.attribute :language %>
+      <%= f.attribute :area_description %>
+      <%= f.attribute :locations %>
+      <%= f.attribute :headline %>
+      <%= f.attribute :description %>
+      <%= f.attribute :instruction %>
+
+      <%= f.attribute :urgency do %>
+        <%= badge(text: @alert.urgency.humanize, color: alert_badge(@alert.urgency).color, icon: alert_badge(@alert.urgency).icon) %>
+      <% end %>
+      <%= f.attribute :severity do %>
+        <%= badge(text: @alert.severity.humanize, color: alert_badge(@alert.severity).color, icon: alert_badge(@alert.severity).icon) %>
+      <% end %>
+      <%= f.attribute :created_at, value: local_time(@alert.created_at) %>
+      <%= f.attribute :created_by %>
+    <% end %>
+
+    <div class="hr-text">Broadcasts</div>
+
+    <div class="table-responsive">
+      <table id="resources" class="table table-vcenter card-table">
+        <thead>
+          <tr role="row">
+            <th>#</th>
+            <% ["Operator", "Channel", "Status", "Progress", "Started at", "Completed at", "Actions"].each do |column| %>
+              <th>
+                <div class="text">
+                  <%= column %>
+                </div>
+              </th>
+            <% end %>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @broadcasts.each do |broadcast| %>
+            <tr>
+              <td>
+                <%= broadcast.id  %>
+              </td>
+              <td>
+                <%= broadcast.operator  %>
+              </td>
+              <td>
+                <%= badge(text: broadcast.channel.upcase, color: alert_badge(broadcast.channel).color, icon: alert_badge(broadcast.channel).icon) %>
+              </td>
+              <% if @alert.approval_status.pending_approval? || @alert.approval_status.rejected? %>
+                <td>
+                  <%= badge(text: "pending".humanize, color: alert_badge("pending").color, icon: alert_badge("pending").icon) %>
+                </td>
+                <td>
+                  <% percentage = number_to_percentage(0, precision: 0, strip_insignificant_zeros: true) %>
+                  <div class="progress"
+                    data-bs-toggle="popover"
+                    data-bs-content="<%= percentage %>"
+                    data-bs-placement="top"
+                    data-bs-trigger="hover"
+                  >
+                    <div class="progress-bar <%= broadcast.progress_percentage == 100 ? "bg-success" : "bg-blue" %> progress-bar-striped progress-bar-animated" style="width: <%= percentage %>"></div>
+                  </div>
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+              <% else %>
+                <td>
+                  <%= badge(text: broadcast.status.humanize, color: alert_badge(broadcast.status).color, icon: alert_badge(broadcast.status).icon) %>
+                </td>
+                <td>
+                  <% percentage = number_to_percentage(broadcast.progress_percentage, precision: 0, strip_insignificant_zeros: true) %>
+                  <div class="progress"
+                    data-bs-toggle="popover"
+                    data-bs-content="<%= percentage %>"
+                    data-bs-placement="top"
+                    data-bs-trigger="hover"
+                  >
+                    <div class="progress-bar <%= broadcast.progress_percentage == 100 ? "bg-success" : "bg-blue" %> progress-bar-striped progress-bar-animated" style="width: <%= percentage %>"></div>
+                  </div>
+                </td>
+                <td>
+                  <%= local_time(broadcast.started_at) %>
+                </td>
+                <td>
+                  <%= local_time(broadcast.completed_at) %>
+                </td>
+                <td>
+                  <% if broadcast.status.pending? %>
+                    <%= button_to("#", class: "btn btn-outline-danger", title: "Cancel", data: { turbo_confirm: "Are you sure you want to cancel the broadcast?" }) do %>
+                      <i class="icon ti ti-alert-triangle"></i> Cancel
+                    <% end %>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

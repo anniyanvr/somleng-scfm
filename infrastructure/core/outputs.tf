@@ -1,7 +1,21 @@
 output "app_ecr_repository" {
-  value = aws_ecrpublic_repository.app.repository_uri
+  value = module.app_ecr_repository
 }
 
-output "nginx_ecr_repository" {
-  value = aws_ecrpublic_repository.nginx.repository_uri
+output "route53_zone" {
+  value = aws_route53_zone.this
+}
+
+output "internal_route53_zone" {
+  value = aws_route53_zone.this_internal
+}
+
+output "rds_cluster" {
+  value     = module.rds_cluster
+  sensitive = true
+}
+
+output "cdn_certificate" {
+  value     = module.cdn_certificate.this
+  sensitive = true
 }

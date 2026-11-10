@@ -1,0 +1,206 @@
+<%= filter_form.simple_fields_for(field_name, filter_form.object.attributes[field_name]) do |field_form| %>
+  <% element_id = field_form.object_name.parameterize.underscore %>
+  <% schema = field_definition.filter.schema %>
+  <%= tag.div(
+    id: element_id,
+    class: "row filter-field",
+    style: ("display: none;" if local_assigns[:visibility]&.hidden?),
+    data: {
+      controller: "filter-field",
+      action: "change@window->filter-field#sync",
+      filter_field_schema_type_value: schema.type
+    }
+  ) do %>
+    <div class="col">
+      <div class="input-group mb-3">
+        <span class="input-group-text">
+          <%= tag.input(
+            class: "form-check-input m-0",
+            id: "#{element_id}_enabled",
+            type: "checkbox",
+            checked: field_form.object.present?,
+            data: {
+              filter_field_target: "toggleElement",
+              action: "filter-field#toggle"
+            }
+          ) %>
+        </span>
+        <%= tag.input(
+          class: "form-control",
+          type: "text",
+          value: human_attribute_name(field_name, namespace: current_account.iso_country_code),
+          readonly: true,
+          data: {
+            filter_field_target: "fieldName"
+          }
+        ) %>
+      </div>
+    </div>
+
+    <div class="col">
+      <%= field_form.input(
+        :operator,
+        label: false,
+        as: :select,
+        collection: field_definition.filter.schema.operators.map { [ human_operator(it), it ] },
+        required: true,
+        input_html: {
+          data: {
+            action: "filter-field#operatorChanged",
+            filter_field_target: "operator"
+          }
+        }
+      ) %>
+    </div>
+
+    <div class="col">
+      <%= tag.div(
+        data: {
+          filter_field_target: "valueWrapper"
+        }
+      ) do %>
+        <% base_options = { label: false, required: true, input_html: { data: { "filter-field-target": "value" } } } %>
+        <% case %>
+        <% when schema.type.list? %>
+          <%= field_form.input(
+            :value,
+            as: :select,
+            collection: schema.options_for_select,
+            **base_options
+          ) %>
+        <% when schema.type.string? %>
+          <%= field_form.input(
+            :value,
+            as: :string,
+            **base_options.deep_merge(
+              input_html: {
+                class: "w-100",
+                minlength: schema.options[:length],
+                maxlength: schema.options[:length]
+              }
+            )
+          ) %>
+        <% when schema.type.value? %>
+          <% if field_form.object.present? && field_form.object.value.is_a?(Array) %>
+            <% base_options = base_options.deep_merge(input_html: { value: "" })  %>
+          <% elsif schema.form_value_type == :integer %>
+            <% base_options = base_options.deep_merge(
+              input_html: {
+                min: schema.options.dig(:type_options, :gteq?),
+                max: schema.options.dig(:type_options, :lteq?),
+                step: 1
+              }
+            ) %>
+          <% end %>
+          <%= field_form.input(
+            :value,
+            as: schema.form_value_type,
+            html5: true,
+            **base_options
+          ) %>
+        <% end %>
+      <% end %>
+
+      <% if schema.type.value? %>
+        <%
+          base_options = {
+            label: false,
+            required: true,
+            wrapper: false,
+            input_html: {
+              name: "#{field_form.object_name}[value][]",
+              data: {
+                filter_field_target: "betweenValue"
+              }
+            }
+          }
+        %>
+        <%
+          base_options = base_options.deep_merge(
+            input_html: {
+              min: schema.options.dig(:type_options, :gteq?),
+              max: schema.options.dig(:type_options, :lteq?),
+              step: 1
+            }
+          ) if schema.form_value_type == :integer
+        %>
+        <% existing_field_values = field_form.object&.operator == "between" ? field_form.object.value : [] %>
+        <%= tag.div(
+          data: {
+            filter_field_target: "betweenValueWrapper"
+          }
+        ) do %>
+          <div class="row">
+            <% 2.times do |index| %>
+              <div class="col">
+                <%= field_form.input(
+                  :value,
+                  as: schema.form_value_type,
+                  html5: true,
+                  **base_options.deep_merge(
+                    input_html: {
+                      id: "#{field_form.field_id(:value)}_#{index}",
+                      value: existing_field_values[index]
+                    }
+                  )
+                ) %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+
+      <%= tag.div(data: { filter_field_target: "multiValueWrapper" }) do %>
+        <% operator = field_form.object&.operator %>
+        <% multi_select_operator = schema.type.array? || ["in", "not_in"].include?(operator) %>
+        <% selected_values = multi_select_operator ? Array(field_form.object&.value) : [] %>
+        <% base_options = { label: false, required: true, include_hidden: false, multiple: true, selected: selected_values } %>
+        <% if schema.respond_to?(:options_for_select) && schema.options_for_select.present? %>
+          <%= field_form.input(
+            :value,
+            as: :select,
+            collection: schema.options_for_select,
+            input_html: {
+              class: "list-select",
+              data: {
+                "filter-field-target": "multiValue"
+              }
+            },
+            **base_options
+          ) %>
+        <% else %>
+          <%= field_form.input(
+            :value,
+            as: :select,
+            collection: selected_values,
+            input_html: {
+              class: "input-tags",
+              data: {
+                "filter-field-target": "multiValue"
+              }
+            },
+            **base_options
+          ) %>
+        <% end %>
+      <% end %>
+
+      <%= tag.div(
+        data: {
+          filter_field_target: "isNullValueWrapper",
+        }
+      ) do %>
+        <%= field_form.input(
+          :value,
+          label: false,
+          as: :select,
+          required: true,
+          input_html: {
+            data: {
+              filter_field_target: "isNullValue"
+            }
+          }
+        ) %>
+      <% end%>
+    </div>
+  <% end %>
+<% end %>

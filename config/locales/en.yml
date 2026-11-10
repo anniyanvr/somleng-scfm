@@ -1,13 +1,31 @@
 ---
 en:
-  activerecord:
-    errors:
-      models:
-        access_token:
-          attributes:
-            base:
-              restrict_destroy_status: Cannot delete record because the destroyer is not the creator
-        phone_call:
-          attributes:
-            base:
-              restrict_destroy_status: Cannot delete record because status is %{status}
+  errors:
+    title: "Oops… You just found an error page."
+    back_to_home: "Take me home"
+    400:
+      title: "Bad Request"
+      subtitle: "The request was invalid and was not processed."
+    404:
+      title: "Not Found"
+      subtitle: "The page you are looking for doesn't exist."
+    406:
+      title: "Unsupported Browser"
+      subtitle: "Your browser is not supported."
+    500:
+      title: "Internal Server Error"
+      subtitle: "The server encountered an internal error."
+  filter_operators:
+    eq: "Equals"
+    not_eq: "Not equals"
+    contains: "Contains"
+    not_contains: "Not contains"
+    starts_with: "Starts with"
+    gt: "Greater than"
+    gteq: "Greater than or equal"
+    lt: "Less than"
+    lteq: "Less than or equal"
+    between: "Between"
+    is_null: "Is NULL"
+    in: "In"
+    not_in: "Not in"

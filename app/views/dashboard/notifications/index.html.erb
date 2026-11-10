@@ -1,0 +1,43 @@
+<%= content_for(:page_title) do %>
+  <%= title(controller_name: :broadcast_notifications, broadcast: @broadcast.id) %>
+<% end %>
+
+<%= content_for(:page_header) do %>
+  <%= title(controller_name: :broadcast_notifications, broadcast: link_to(@broadcast.id, dashboard_broadcast_path(@broadcast))).html_safe %>
+<% end %>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-actions">
+      <%= render("shared/filters_button", filter_form: @filter_form) %>
+      <%= render(
+        "shared/export_action",
+        disabled: @notifications.empty?,
+        export_params: { resource_type: "Notification", scoped_id: @broadcast.id }
+      ) %>
+   </div>
+  </div>
+
+  <%= render "shared/filter_form", filter_form: @filter_form %>
+
+  <%= render("shared/table_data", collection: @notifications, headers: [:id, :beneficiary, :status, :delivery_attempts_count]) do |notification| %>
+    <td>
+      <%= link_to(notification.id, dashboard_broadcast_notification_path(notification.broadcast_id, notification)) %>
+    </td>
+    <td>
+      <% if notification.beneficiary_id.present? %>
+        <%= link_to(format_phone_number(notification.phone_number), dashboard_beneficiary_path(notification.beneficiary_id)) %>
+      <% else %>
+        <%= format_phone_number(notification.phone_number) %>
+      <% end %>
+    </td>
+    <td>
+      <%= notification_status(notification) %>
+    </td>
+    <td>
+      <%= notification.delivery_attempts_count %>
+    </td>
+  <% end %>
+
+  <%= render("shared/pagination", resources: @notifications) %>
+</div>

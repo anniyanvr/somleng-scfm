@@ -1,82 +1,131 @@
 require "rails_helper"
 
 RSpec.describe ScheduledJob do
-  it "queues phone calls per account" do
-    account = create(:account)
+  it "initializes delivery attempts" do
+    account = create(:account, delivery_attempt_queue_limit: 1)
 
-    created_phone_call_from_running_callout = create_phone_call(
-      account: account,
-      status: :created,
-      callout_status: :running
+    low_priority_delivery_attempt = create(
+      :delivery_attempt,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, :running, account:),
+        priority: 1
+      )
     )
-    created_phone_call_from_stopped_callout = create_phone_call(
-      account: account,
-      status: :created,
-      callout_status: :stopped
+    high_priority_delivery_attempt = create(
+      :delivery_attempt,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, :running, account:)
+      )
     )
-    queued_phone_call = create_phone_call(
-      account: account,
-      status: :queued,
-      callout_status: :running
+    _delivery_attempt_from_running_broadcast = create(
+      :delivery_attempt,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, :running, account:)
+      )
+    )
+    delivery_attempt_from_stopped_broadcast = create(
+      :delivery_attempt,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, :stopped, account:)
+      )
+    )
+    queued_delivery_attempt = create(
+      :delivery_attempt,
+      :queued,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, :running, account:)
+      )
     )
 
     ScheduledJob.perform_now
 
-    expect(created_phone_call_from_running_callout.reload.status).to eq("queued")
-    expect(created_phone_call_from_stopped_callout.reload.status).to eq("created")
-    expect(queued_phone_call.reload.status).to eq("queued")
+    expect(high_priority_delivery_attempt.reload.status).to eq("queued")
+    expect(low_priority_delivery_attempt.reload.status).to eq("created")
+    expect(delivery_attempt_from_stopped_broadcast.reload.status).to eq("created")
+    expect(queued_delivery_attempt.reload.status).to eq("queued")
 
-    expect(QueueRemoteCallJob).to have_been_enqueued.exactly(:once)
-    expect(QueueRemoteCallJob).to have_been_enqueued.with(created_phone_call_from_running_callout)
+    expect(InitiateDeliveryAttemptJob).to have_been_enqueued.exactly(:once)
+    expect(InitiateDeliveryAttemptJob).to have_been_enqueued.with(high_priority_delivery_attempt)
   end
 
   it "fetches in progress call statuses" do
     account = create(:account)
 
-    phone_call_with_in_progress_status = create_phone_call(
-      account: account,
-      status: :in_progress,
-      remotely_queued_at: 10.minutes.ago
+    in_progress_delivery_attempt = create(
+      :delivery_attempt,
+      :initiated,
+      initiated_at: 10.minutes.ago,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, account:)
+      )
     )
-    _in_progress_phone_call = create_phone_call(
-      account: account,
-      status: :in_progress,
-      remotely_queued_at: Time.current
+
+    in_progress_queued_for_fetch_expired_delivery_attempt = create(
+      :delivery_attempt,
+      :initiated,
+      initiated_at: 10.minutes.ago,
+      status_update_queued_at: 20.minutes.ago,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, account:)
+      )
     )
-    _in_progress_phone_call = create_phone_call(
-      account: account,
-      status: :in_progress,
-      remotely_queued_at: 10.minutes.ago,
-      remote_status_fetch_queued_at: Time.current
+
+    create(
+      :delivery_attempt,
+      :initiated,
+      initiated_at: Time.current,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, account:)
+      )
+    )
+
+    create(
+      :delivery_attempt,
+      :initiated,
+      initiated_at: 10.minutes.ago,
+      status_update_queued_at: Time.current,
+      notification: create(
+        :notification,
+        broadcast: create(:broadcast, account:)
+      )
     )
 
     ScheduledJob.perform_now
 
-    expect(FetchRemoteCallJob).to have_been_enqueued.exactly(:once)
-    expect(FetchRemoteCallJob).to have_been_enqueued.with(phone_call_with_in_progress_status)
-    expect(phone_call_with_in_progress_status.reload.remote_status_fetch_queued_at).to be_present
+    expect(UpdateDeliveryAttemptStatusJob).to have_been_enqueued.exactly(:twice)
+    expect(UpdateDeliveryAttemptStatusJob).to have_been_enqueued.with(in_progress_delivery_attempt)
+    expect(UpdateDeliveryAttemptStatusJob).to have_been_enqueued.with(in_progress_queued_for_fetch_expired_delivery_attempt)
+    expect(in_progress_delivery_attempt.reload.status_update_queued_at).to be_present
   end
 
-  it "requeues callout populations" do
-    callout_population = create(:callout_population, status: :running)
-    long_running_callout_population = create(:callout_population, status: :running, updated_at: 15.minutes.ago)
-    finished_callout_population = create(:callout_population, status: :finished)
+  it "completes deliverable broadcasts" do
+    broadcast = create(:broadcast, :running)
+    create(:notification, :succeeded, broadcast:)
 
     ScheduledJob.perform_now
 
-    expect(callout_population.reload.status).to eq("running")
-    expect(long_running_callout_population.reload.status).to eq("queued")
-    expect(finished_callout_population.reload.status).to eq("finished")
-    expect(RunBatchOperationJob).to have_been_enqueued.exactly(:once)
-    expect(RunBatchOperationJob).to have_been_enqueued.with(long_running_callout_population)
+    expect(broadcast.reload).to have_attributes(
+      status: "completed",
+      completed_at: be_present
+    )
   end
 
-  def create_phone_call(account:, callout_status: :running, **attributes)
-    callout = create(:callout, account: account, status: callout_status)
-    callout_participation = create_callout_participation(
-      account: account, callout: callout
-    )
+  it "completes non deliverable broadcasts" do
+    broadcast = create(:broadcast, :audio, :running)
 
-    create(:phone_call, account: account, callout: callout, callout_participation: callout_participation, **attributes)
+    ScheduledJob.perform_now
+
+    expect(broadcast.reload).to have_attributes(
+      status: "completed",
+      completed_at: be_present
+    )
   end
 end

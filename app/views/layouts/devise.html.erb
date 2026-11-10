@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html data-bs-theme="<%= cookies[:theme] %>">
+  <head>
+    <title>OpenEWS - <%= content_for?(:page_title) ? yield(:page_title) : title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <%= csrf_meta_tags %>
+    <%= favicon_link_tag %>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+
+  <body>
+    <div class="page page-center">
+      <div class="container container-tight py-4">
+        <div class="text-center mb-4 account-logo">
+          <% if app_request.account_subdomain_request? %>
+            <%= account_logo(current_account, class: "img-fluid mx-auto px-5 my-3 d-block") %>
+          <% else %>
+            <%= image_tag("open-ews_landscape_logo.png", class: "img-fluid mx-auto px-5 my-3 d-block") %>
+          <% end %>
+        </div>
+
+        <div class="card card-md">
+          <div class="card-body">
+            <%= render "shared/alerts" %>
+
+            <%= yield %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

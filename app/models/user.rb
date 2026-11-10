@@ -1,13 +1,32 @@
 class User < ApplicationRecord
-  include MetadataHelpers
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable and :omniauthable
-  devise :invitable, :registerable, :database_authenticatable,
-         :recoverable, :rememberable, :trackable, :validatable, :async
+  devise :two_factor_authenticatable
+  ACCEPTED_AVATAR_CONTENT_TYPES = [ "image/png", "image/jpeg", "image/webp" ].freeze
 
-  AVAILABLE_LOCALES = %w[en km].freeze
+  devise :invitable, :registerable, :two_factor_authenticatable,
+         :recoverable, :rememberable, :trackable, :validatable,
+         :confirmable, reconfirmable: true
 
   belongs_to :account
+  has_many :imports, dependent: :destroy
+  has_many :exports, dependent: :destroy
 
-  validates_inclusion_of :locale, in: AVAILABLE_LOCALES
+  has_one_attached :avatar
+
+  enumerize :language, in: %w[en km lo ne hy my], default: "en"
+  enumerize :role, in: %i[owner member], predicates: true
+
+  validates :name, :email, presence: true
+  validates :avatar, content_type: ACCEPTED_AVATAR_CONTENT_TYPES
+
+  before_create :set_defaults
+
+  def send_devise_notification(notification, *)
+    devise_mailer.send(notification, self, *).deliver_later
+  end
+
+  private
+
+  def set_defaults
+    self.otp_secret ||= User.generate_otp_secret
+  end
 end

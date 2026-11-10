@@ -1,0 +1,47 @@
+<div class="card broadcast-card-<%= broadcast.id %>">
+  <div class="card-body">
+    <div class="notification-stats">
+      <div class="subheader d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <%= link_to(
+            "#{Broadcast.model_name.human} ##{broadcast.id}",
+            dashboard_broadcast_path(broadcast), class: "text-secondary"
+          ) %>
+          <%= broadcast_channel(broadcast) %>
+        </div>
+        <%= broadcast_status(broadcast) %>
+      </div>
+
+      <div class="progress progress-separated my-3">
+        <% broadcast.notification_stats_percentage.each do |status, percentage| %>
+          <% count = broadcast.notification_stats[status] %>
+          <div
+            class="progress-bar bg-<%= notification_status_color(status) %>"
+            role="progressbar"
+            data-bs-toggle="popover"
+            data-bs-content="<%= count_of_total(count, total: pluralize_model(broadcast.total_notifications_count, Notification.model_name)) %>"
+            data-bs-placement="top"
+            data-bs-trigger="hover"
+            style="width: <%= percentage %>%">
+          </div>
+        <% end %>
+      </div>
+
+      <div class="row">
+        <% broadcast.notification_stats_percentage.each do |status, percentage| %>
+          <% count = broadcast.notification_stats[status] %>
+          <div class="col-auto d-flex align-items-center pe-2"
+            data-bs-toggle="popover"
+            data-bs-content="<%= count_of_total(count, total: pluralize_model(broadcast.total_notifications_count, Notification.model_name)) %>"
+            data-bs-placement="top"
+            data-bs-trigger="hover"
+          >
+            <span class="legend bg-<%= notification_status_color(status) %>"></span>
+            <span class="mx-1"><%= t("statuses.#{status}", default: status.to_s.humanize) %></span>
+            <span class="d-none d-md-inline d-lg-none d-xxl-inline text-secondary"><%= number_to_percentage(percentage, precision: 0, strip_insignificant_zeros: true) %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

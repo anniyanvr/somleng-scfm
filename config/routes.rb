@@ -1,107 +1,112 @@
 Rails.application.routes.draw do
-  devise_scope :user do
-    get "users/edit", to: "devise/registrations#edit", as: "edit_user_registration"
-    patch "users", to: "devise/registrations#update", as: "user_registration"
-  end
+  constraints(AppSubdomainConstraint.new) do
+    devise_for(
+      :users,
+      controllers: { invitations: "users/invitations" },
+      skip: [ :invitations, :registrations ]
+    )
 
-  devise_for :users,
-             controllers: { invitations: "dashboard/user_invitations" },
-             skip: :registrations
+    devise_scope(:user) do
+      resource(
+        :registration,
+        only: %i[edit update],
+        controller: "users/registrations",
+        as: :user_registration,
+        path: "users"
+      )
 
-  root "home#index"
-
-  get "dashboard", to: "dashboard/callouts#index", as: :user_root
-
-  namespace "dashboard" do
-    root to: "callouts#index"
-    resources :access_tokens
-    resource :account, only: %i[edit update]
-
-    namespace :batch_operation do
-      resources :callout_populations, only: %i[edit update]
-    end
-
-    resources :batch_operations, only: %i[index show destroy] do
-      resources :batch_operation_events, only: :create
-    end
-
-    resources :contacts do
-      resources :callout_participations, only: :index
-      resources :phone_calls, only: :index
-    end
-
-    resources :callouts do
-      namespace :batch_operation do
-        resources :callout_populations, only: %i[new create]
+      resource(
+        :invitation,
+        only: :update,
+        controller: "devise/invitations",
+        as: :user_invitation,
+        path: "users/invitation"
+      ) do
+        get :accept, action: :edit
       end
-      resources :batch_operations, only: %i[index destroy]
-      resources :callout_events, only: :create
-      resources :callout_participations, only: :index
-      resources :phone_calls, only: :index
     end
 
-    resources :callout_participations, only: %i[index show destroy] do
-      resources :phone_calls, only: :index
-    end
+    scope module: :dashboard, as: :dashboard do
+      resources :two_factor_authentications, only: %i[new create destroy]
+      resources :alerts, only: [ :index, :show, :new, :create, :update ]
 
-    resources :phone_calls, only: %i[index show] do
-      resources :remote_phone_call_events, only: :index
-    end
+      namespace :settings do
+        resource :account, only: [ :show, :update ]
+        resource :developer, only: :show
+        resources :users, only: [ :index, :show, :new, :create, :destroy ]
 
-    resources :remote_phone_call_events, only: %i[index show]
-    resources :users, except: %i[new create]
-    resources :locales, only: :update
-  end
+        root to: "accounts#show"
+      end
 
-  namespace "api", defaults: { format: "json" } do
-    defaults format: :xml do
-      resources :remote_phone_call_events, only: :create
-    end
+      resources :beneficiaries
+      resources :beneficiary_groups do
+        resources :memberships, only: :index, controller: "beneficiary_groups/memberships"
+      end
+      resources :beneficiary_addresses, only: :new
 
-    resources :accounts, except: %i[new edit] do
-      resources :users, only: :index
-      resources :access_tokens, only: :index
-    end
+      resources :broadcasts do
+        resource :state, only: :create, controller: "broadcasts/states"
+        resources :notifications, only: %i[ index show ]
+      end
 
-    resource :account, only: %i[show update], as: :current_account
+      resource :locale, only: :update
 
-    resources :access_tokens
+      resources :imports, only: %i[index create]
+      resources :exports, only: %i[index create]
+      resource :user_profile, only: [ :show, :update ]
 
-    resources :users, except: %i[new edit] do
-      resources :user_events, only: :create
-    end
-
-    resources :remote_phone_call_events, only: %i[index show update]
-
-    resources :contacts, except: %i[new edit] do
-      resources :callout_participations, only: :index
-      resources :callouts, only: :index
-      resources :phone_calls, only: :index
-      resources :remote_phone_call_events, only: :index
-    end
-
-    resource :contact_data, only: :create
-
-    resources :callouts, except: %i[new edit] do
-      resources :callout_events, only: :create
-      resources :callout_participations, only: %i[index create]
-      resources :contacts, only: :index
-      resources :phone_calls, only: :index
-      resources :remote_phone_call_events, only: :index
-      resources :batch_operations, only: %i[create index]
-    end
-
-    resources :batch_operations, except: %i[new edit] do
-      resources :batch_operation_events, only: :create
-    end
-
-    resources :callout_participations, except: %i[new edit create] do
-      resources :phone_calls, only: %i[index]
-      resources :remote_phone_call_events, only: :index
-    end
-
-    resources :phone_calls, only: %i[index show] do
-      resources :remote_phone_call_events, only: :index
+      root to: "home#index"
     end
   end
+
+  constraints(subdomain: AppSettings.fetch(:app_subdomain)) do
+    resource :forgot_subdomain, only: [], controller: "users/forgot_subdomain", path: "users" do
+      get   :new,     path: "forgot_subdomain", as: "new"
+      post  :create,  path: "forgot_subdomain"
+    end
+
+    root to: redirect("/users/forgot_subdomain"), as: :app_root
+  end
+
+  constraints(subdomain: [ AppSettings.fetch(:api_subdomain) ]) do
+    namespace :v1, module: "api/v1", as: "api_v1", defaults: { format: "json" } do
+      resources :beneficiaries, only: [ :index, :create, :show, :update, :destroy ] do
+        get "stats" => "beneficiaries/stats#index", on: :collection
+        resources :addresses, only: [ :index, :create, :show, :destroy ]
+      end
+
+      resources :beneficiary_groups, only: [ :index, :show, :create, :update, :destroy ] do
+        resources :members, controller: "beneficiary_groups/members", only: [ :index, :show, :create, :destroy ] do
+          get "stats" => "beneficiary_groups/members/stats#index", on: :collection
+        end
+      end
+
+      resources :broadcasts, only: [ :index, :show, :create, :update ] do
+        resource :audio_file, controller: "broadcasts/audio_files", only: :show
+        resources :notifications, controller: "broadcasts/notifications", only: [ :index, :show ] do
+          get "stats" => "broadcasts/notifications/stats#index", on: :collection
+        end
+      end
+
+      resources :events, only: [ :index, :show ] do
+        get "stats" => "events/stats#index", on: :collection
+      end
+
+      resource :account, only: :show
+    end
+
+    namespace :somleng_webhooks do
+      resources :delivery_attempts, only: [] do
+        resources :call_status_callbacks, only: :create
+        resources :message_status_callbacks, only: :create
+      end
+    end
+  end
+
+  match "/:status_code",
+    to: "errors#show",
+    via: :all,
+    constraints: {
+      status_code: /#{ErrorsController::STATUS_CODES.join('|')}/
+    }
 end

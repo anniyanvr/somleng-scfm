@@ -1,0 +1,2 @@
+class ApplicationSerializer < JSONAPISerializer
+end

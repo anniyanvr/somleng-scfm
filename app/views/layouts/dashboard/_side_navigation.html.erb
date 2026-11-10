@@ -1,0 +1,39 @@
+<aside class="navbar navbar-vertical navbar-expand-lg">
+  <div class="container-fluid">
+    <button class="navbar-toggler"
+            type="button"
+            aria-controls="sidebar-menu"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+            data-bs-toggle="collapse"
+            data-bs-target="#sidebar-menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="navbar-brand">
+      <%= link_to dashboard_root_path do %>
+        <%= account_logo(current_account, class: "navbar-brand-image") %>
+      <% end %>
+    </div>
+
+    <div class="navbar-nav flex-row d-lg-none">
+      <%= render("layouts/dashboard/account_dropdown") %>
+    </div>
+
+    <div id="sidebar-menu" class="collapse navbar-collapse">
+      <ul class="navbar-nav pt-lg-3">
+        <%= sidebar_nav(title(controller_name: :home, action_name: :index), dashboard_root_path, icon_class: "ti ti-home") %>
+        <% if FeatureFlag.enabled_for?(current_user, :alerts) %>
+          <%= sidebar_nav(title(controller_name: :alerts, action_name: :index), dashboard_alerts_path, icon_class: "ti ti-sos") %>
+        <% end %>
+        <%= sidebar_nav(title(controller_name: :broadcasts, action_name: :index), dashboard_broadcasts_path, icon_class: "ti ti-speakerphone") %>
+        <%= sidebar_nav(title(controller_name: :beneficiaries, action_name: :index), dashboard_beneficiaries_path, icon_class: "ti ti-address-book") %>
+        <%= sidebar_nav(title(controller_name: :beneficiary_groups, action_name: :index), dashboard_beneficiary_groups_path, icon_class: "ti ti-users-group") %>
+      </ul>
+    </div>
+
+    <div class="sidebar-footer d-none d-md-block">
+      <div class="text-center mb-1 small">Powered by <%= link_to("OpenEWS", "https://www.open-ews.org", style: "text-decoration: none; color: inherit;", target: "_blank") %></div>
+    </div>
+  </div>
+</aside>

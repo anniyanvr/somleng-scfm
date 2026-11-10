@@ -1,0 +1,16 @@
+en:
+  enumerize:
+    defaults:
+      gender:
+        M: "Male"
+        F: "Female"
+      language:
+        km: ខ្មែរ
+        en: English
+        lo: ລາວ
+        ne: नेपाली
+        hy: Հայերեն
+        my: မြန်မာ
+      role:
+        owner: Owner
+        member: Member

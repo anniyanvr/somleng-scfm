@@ -1,0 +1,92 @@
+<div class="card mb-3" data-controller="remove-nested-form">
+  <div class="ribbon ribbon-top bg-red" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove address">
+    <i class="icon ti ti-trash cursor-pointer" data-action="click->remove-nested-form#remove"></i>
+  </div>
+
+  <div class="card-body">
+    <%= form.input :_destroy, as: :hidden, input_html: { data: { "remove-nested-form-target": "destroyElement" } } %>
+
+    <div class="row">
+      <div class="col-md-6">
+        <%= form.input(
+          :iso_region_code,
+          label:
+            safe_join(
+              [
+                human_attribute_name(:iso_region_code, namespace: current_account.iso_country_code),
+                link_to(
+                  "https://en.wikipedia.org/wiki/ISO_3166-2:#{current_account.iso_country_code}",
+                  target: "_blank",
+                  rel: "noopener",
+                  style: "text-decoration: none;",
+                  aria: { label: "Help" }
+                ) do
+                  content_tag(:i, "", class: "ti ti-info-circle")
+                end
+              ], " "
+            )
+        ) %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_2_code,
+          label: human_attribute_name(:administrative_division_level_2_code, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_2_name,
+          label: human_attribute_name(:administrative_division_level_2_name, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_3_code,
+          label: human_attribute_name(:administrative_division_level_3_code, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_3_name,
+          label: human_attribute_name(:administrative_division_level_3_name, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_4_code,
+          label: human_attribute_name(:administrative_division_level_4_code, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_4_name,
+          label: human_attribute_name(:administrative_division_level_4_name, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_5_code,
+          label: human_attribute_name(:administrative_division_level_5_code, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+      <div class="col">
+        <%= form.input(
+          :administrative_division_level_5_name,
+          label: human_attribute_name(:administrative_division_level_5_name, namespace: current_account.iso_country_code)
+        ) %>
+      </div>
+    </div>
+  </div>
+</div>

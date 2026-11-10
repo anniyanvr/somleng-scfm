@@ -1,0 +1,32 @@
+---
+lo:
+  titles:
+    actions:
+      new: ໃໝ່
+      filters: ການກັ່ນຕອງ
+      export: ສົ່ງອອກ
+      import: ນຳເຂົ້າ
+      delete: ລຶບ
+      more: ເພີ່ມເຕີມ
+      sign_out: ອອກຈາກລະບົບ
+    home:
+      index: ໜ້າຄວບຄຸມ
+    exports:
+      index: ການສົ່ງອອກ
+    imports:
+      index: ນໍາເຂົ້າ
+    user_settings:
+      index: ການຕັ້ງຄ່າ
+    beneficiaries:
+      index: ຜູ້ໄດ້ຮັບຜົນປະໂຫຍດ
+    broadcasts:
+      index: ອອກອາກາດ
+    beneficiary_groups:
+      index: ກຸ່ມຜູ້ໄດ້ຮັບຜົນປະໂຫຍດ
+    profiles:
+      show: ຂໍ້ມູນສ່ວນຕົວ
+    notifications:
+      index: ການແຈ້ງເຕືອນ
+    settings:
+      index: ການຕັ້ງຄ່າ
+    no_records: ບໍ່ພົບການບັນທຶກ

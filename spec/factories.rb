@@ -1,188 +1,325 @@
 FactoryBot.define do
-  sequence :somali_msisdn, 252_662_345_678, &:to_s
-
-  sequence :twilio_request_params do
-    params = Twilio::REST::Client.new.api.account.calls.method(:create).parameters.map do |param|
-      [param[1].to_s, param[1].to_s]
-    end
-
-    Hash[params]
-  end
-
-  sequence :twilio_remote_call_event_details do
-    {
-      CallSid: SecureRandom.uuid,
-      From: FactoryBot.generate(:somali_msisdn),
-      To: "345",
-      CallStatus: "completed",
-      Direction: "inbound",
-      AccountSid: SecureRandom.uuid,
-      ApiVersion: "2010-04-01"
-    }
-  end
+  sequence(:phone_number, "855972345678")
 
   sequence :email do |n|
     "user#{n}@example.com"
   end
 
-  sequence :twilio_account_sid do |n|
-    "#{Account::TWILIO_ACCOUNT_SID_PREFIX}#{n}"
-  end
-
   sequence :auth_token do
-    SecureRandom.uuid
+    SecureRandom.alphanumeric(43)
   end
 
   sequence :somleng_account_sid do
     SecureRandom.uuid
   end
 
-  factory :callout do
+  factory :broadcast do
     account
+    voice_call
+    pending
+    created_via { :dashboard }
 
-    transient do
-      audio_file { nil }
-    end
-
-    after(:build) do |callout, evaluator|
-      if evaluator.audio_file.present?
-        callout.audio_file = Rack::Test::UploadedFile.new(
-          evaluator.audio_file,
-          "audio/mp3"
-        )
+    trait :with_attached_audio do
+      transient do
+        audio_filename { "test.mp3" }
+        active_storage_service { "test" }
       end
+
+      audio_file { association :active_storage_attachment, filename: audio_filename, service_name: active_storage_service }
     end
 
-    trait :initialized do
+    trait :voice_call do
+      channel { "voice_call" }
     end
 
-    trait :can_start do
+    trait :audio do
+      channel { "audio" }
     end
 
-    trait :can_stop do
-      status { "running" }
+    trait :text_message do
+      channel { "text_message" }
+      message { "Test message" }
     end
 
-    trait :can_pause do
-      can_stop
+    trait :pending do
+      status { :pending }
     end
-
-    trait :can_resume do
-      status { "paused" }
-    end
-
-    trait :running do
-      status { Callout::STATE_RUNNING }
-    end
-  end
-
-  factory :contact do
-    account
-    msisdn { generate(:somali_msisdn) }
-  end
-
-  factory :batch_operation_base, class: "BatchOperation::Base" do
-    account
-
-    traits_for_enum :status, %i[preview queued running finished]
-
-    factory :callout_population, aliases: [:batch_operation],
-                                 class: "BatchOperation::CalloutPopulation" do
-      after(:build) do |callout_population|
-        callout_population.callout ||= build(:callout, account: callout_population.account)
-      end
-    end
-  end
-
-  factory :callout_participation do
-    callout
-    contact
-  end
-
-  factory :phone_call do
-    outbound
-    remote_call_id { SecureRandom.uuid }
-
-    trait :outbound do
-      callout_participation
-      callout { callout_participation&.callout }
-    end
-
-    trait :inbound do
-      callout_participation { nil }
-      msisdn { generate(:somali_msisdn) }
-      remote_direction { PhoneCall::TWILIO_DIRECTIONS[:inbound] }
-    end
-
-    traits_for_enum :status, %i[
-      created
-      completed
-      failed
-      in_progress
-      expired
-      in_progress
-      remotely_queued
-    ]
 
     trait :queued do
       status { :queued }
-      remote_call_id { nil }
+    end
+
+    trait :errored do
+      status { :errored }
+    end
+
+    trait :stopped do
+      with_beneficiary_filter
+      status { :stopped }
+    end
+
+    trait :running do
+      status { :running }
+      with_beneficiary_filter
+      started_at { Time.current }
+    end
+
+    trait :completed do
+      with_beneficiary_filter
+      status { :completed }
+      started_at { Time.current }
+      completed_at { Time.current }
+    end
+
+    trait :with_beneficiary_filter do
+      beneficiary_filter {
+        {
+          gender: {
+            eq: "M"
+          }
+        }
+      }
     end
   end
 
-  factory :remote_phone_call_event do
-    transient do
-      build_phone_call { true }
+  factory :broadcast_beneficiary_group do
+    broadcast
+    beneficiary_group {  association :beneficiary_group, account: broadcast.account }
+  end
+
+  factory :geocode_target_area do
+    broadcast
+    path { [ "KH-1" ] }
+    geocode { path.last }
+    administrative_level { path.size }
+  end
+
+  factory :beneficiary do
+    account
+    iso_country_code { "KH" }
+    phone_number { generate(:phone_number) }
+
+    trait :disabled do
+      status { "disabled" }
+    end
+  end
+
+  factory :beneficiary_group do
+    account
+    name { "My Group" }
+  end
+
+  factory :beneficiary_group_membership do
+    beneficiary_group
+    beneficiary {  association :beneficiary, account: beneficiary_group.account }
+  end
+
+  factory :event do
+    account
+    beneficiary_created
+
+    trait :beneficiary_created do
+      transient do
+        beneficiary { create(:beneficiary, account:) }
+      end
+
+      type { "beneficiary.created" }
+      details {
+        BeneficiarySerializer.new(beneficiary).serializable_hash
+      }
     end
 
-    details { generate(:twilio_remote_call_event_details) }
-    remote_call_id { details[:CallSid] }
-    remote_direction { details[:Direction] }
-    call_flow_logic { Account::DEFAULT_CALL_FLOW_LOGIC }
-
-    after(:build) do |remote_phone_call_event, evaluator|
-      if evaluator.build_phone_call
-        remote_phone_call_event.phone_call ||= create(
-          :phone_call,
-          msisdn: remote_phone_call_event.details[:From],
-          remote_call_id: remote_phone_call_event.remote_call_id,
-          remote_direction: remote_phone_call_event.remote_direction
-        )
+    trait :beneficiary_deleted do
+      transient do
+        beneficiary { create(:beneficiary, account:) }
       end
+
+      type { "beneficiary.deleted" }
+      details {
+        BeneficiarySerializer.new(beneficiary).serializable_hash
+      }
+    end
+  end
+
+  factory :notification do
+    broadcast
+    beneficiary { association :beneficiary, account: broadcast.account }
+    pending
+
+    trait :pending do
+      status { :pending }
+    end
+
+    trait :succeeded do
+      completed_at { Time.current }
+      status { :succeeded }
+    end
+
+    trait :failed do
+      completed_at { Time.current }
+      status { :failed }
+    end
+  end
+
+  factory :delivery_attempt do
+    notification
+    broadcast { notification.broadcast }
+    beneficiary { notification.beneficiary }
+    phone_number { beneficiary.phone_number }
+    status { :created }
+
+    trait :queued do
+      queued_at { Time.current }
+      status { :queued }
+    end
+
+    trait :errored do
+      queued_at { Time.current }
+      status { :errored }
+    end
+
+    trait :initiated do
+      queued_at { Time.current }
+      initiated_at { Time.current }
+      status { :initiated }
+    end
+
+    trait :succeeded do
+      queued_at { Time.current }
+      initiated_at { Time.current }
+      completed_at { Time.current }
+      status { :succeeded }
+    end
+
+    trait :failed do
+      queued_at { Time.current }
+      initiated_at { Time.current }
+      completed_at { Time.current }
+      status { :failed }
     end
   end
 
   factory :account do
-    trait :with_default_provider do
-      with_twilio_provider
-    end
+    name { "NCDM" }
+    sequence(:subdomain) { |n| "ncdm#{n}" }
+    iso_country_code { "KH" }
+    supported_channels { [ "voice_call", "text_message", "audio" ] }
 
-    trait :with_twilio_provider do
-      platform_provider_name { "twilio" }
-      twilio_account_sid
-      twilio_auth_token { generate(:auth_token) }
-    end
-
-    trait :with_somleng_provider do
-      platform_provider_name { "somleng" }
-      somleng_account_sid
+    trait :configured_for_broadcasts do
+      somleng_account_sid { generate(:somleng_account_sid) }
       somleng_auth_token { generate(:auth_token) }
+      notification_phone_number { "1294" }
     end
 
-    trait :super_admin do
-      permissions { [:super_admin] }
+    trait :with_logo do
+      association :logo, factory: :active_storage_attachment, filename: "account_logo.jpg"
     end
   end
 
   factory :user do
     account
     email
+    confirmed
+    member
+    name { "John Doe" }
     password { "secret123" }
     password_confirmation { password }
+    otp_required_for_login { true }
+
+    trait :confirmed do
+      confirmed_at { Time.current }
+    end
+
+    traits_for_enum :role, %i[owner member]
   end
 
   factory :access_token do
-    association :resource_owner, factory: :account
-    created_by { resource_owner }
+    account
+    scopes { :write }
+  end
+
+  factory :oauth_application, class: "Doorkeeper::Application" do
+    association :owner, factory: :account
+
+    name { "My Application" }
+    redirect_uri { "urn:ietf:wg:oauth:2.0:oob" }
+  end
+
+  factory :webhook_endpoint do
+    oauth_application
+    url { "https://example.com/webhooks" }
+    subscriptions { [ "broadcast.created", "broadcast.updated" ] }
+    enabled { true }
+  end
+
+  factory :webhook_request_log do
+    event
+    webhook_endpoint
+    url { webhook_endpoint.url }
+    http_status_code { "200" }
+    failed { false }
+    payload { EventSerializer.new(event).serializable_hash.deep_stringify_keys }
+  end
+
+  factory :active_storage_attachment, class: "ActiveStorage::Blob" do
+    transient do
+      filename { "test.mp3" }
+      service_name { "test" }
+    end
+
+    initialize_with do
+      ActiveStorage::Blob.create_and_upload!(
+        io: File.open("#{RSpec.configuration.file_fixture_path}/#{filename}"),
+        filename:
+      )
+    end
+
+    after(:create) do |blob, evaluator|
+      blob.update_columns(service_name: evaluator.service_name)
+    end
+  end
+
+  factory :beneficiary_address do
+    beneficiary
+    iso_region_code { "KH-1" }
+
+    trait :full do
+      administrative_division_level_2_code { "0102" }
+      administrative_division_level_2_name { "Mongkol Borey" }
+      administrative_division_level_3_code { "010201" }
+      administrative_division_level_3_name { "Banteay Neang" }
+      administrative_division_level_4_code { "01020101" }
+      administrative_division_level_4_name { "Ou Thum" }
+      administrative_division_level_5_code { "0102010101" }
+      administrative_division_level_5_name { "Krom 1" }
+    end
+  end
+
+  factory :import do
+    beneficiaries
+    user
+    account { user.account }
+    status { :processing }
+
+    trait :beneficiaries do
+      resource_type { "Beneficiary" }
+
+      association :file, factory: :active_storage_attachment, filename: "beneficiaries.csv"
+    end
+  end
+
+  factory :export do
+    user
+    account { user.account }
+    resource_type { "Broadcast" }
+    scoped_to { { account_id: account.id } }
+    filter_params { {} }
+
+    trait :completed do
+      completed_at { Time.current }
+      progress_percentage { 100 }
+
+      association :file, factory: :active_storage_attachment, filename: "beneficiaries.csv"
+    end
   end
 end

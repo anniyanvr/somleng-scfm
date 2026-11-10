@@ -1,0 +1,29 @@
+class BeneficiaryAddressValidator
+  attr_reader :errors
+
+  Error = Data.define(:key, :message)
+
+  def initialize
+    @errors = []
+  end
+
+  def valid?(attributes)
+    attributes.symbolize_keys!
+
+    5.downto(3) do |level|
+      division_attributes = [ :code, :name ].map { |type| :"administrative_division_level_#{level}_#{type}" }
+
+      next if division_attributes.all? { |division_attribute| attributes[division_attribute].blank? }
+
+      parent_level = level - 1
+      parent_division_attributes = [ :code, :name ].map { |type| :"administrative_division_level_#{parent_level}_#{type}" }
+
+      next if parent_division_attributes.any? { |parent_division_attribute| attributes[parent_division_attribute].present? }
+
+      errors << Error.new(key: parent_division_attributes.first, message: "must be present")
+      return false
+    end
+
+    errors.empty?
+  end
+end

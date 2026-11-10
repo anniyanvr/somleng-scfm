@@ -1,30 +1,22 @@
-module "scfm" {
-  source = "../modules/scfm"
+module "app" {
+  source = "../modules/app"
 
-  ecs_cluster = data.terraform_remote_state.core_infrastructure.outputs.ecs_cluster
-  codedeploy_role = data.terraform_remote_state.core_infrastructure.outputs.codedeploy_role
-  app_identifier = "scfm"
-  subdomain = "scfm"
-  cdn_subdomain = "cdn-scfm"
-  app_environment = "production"
-  app_image = data.terraform_remote_state.core.outputs.app_ecr_repository
-  nginx_image = data.terraform_remote_state.core.outputs.nginx_ecr_repository
-  memory = 1024
-  cpu = 512
-  aws_region = var.aws_region
-  load_balancer = data.terraform_remote_state.core_infrastructure.outputs.application_load_balancer
-  listener_arn = data.terraform_remote_state.core_infrastructure.outputs.https_listener.arn
-  container_instance_subnets = data.terraform_remote_state.core_infrastructure.outputs.vpc.private_subnets
-  vpc_id = data.terraform_remote_state.core_infrastructure.outputs.vpc.vpc_id
-  route53_zone = data.terraform_remote_state.core_infrastructure.outputs.route53_zone_somleng_org
-  cdn_certificate = data.terraform_remote_state.core_infrastructure.outputs.cdn_certificate
-  logs_bucket = data.terraform_remote_state.core_infrastructure.outputs.logs_bucket.id
-  uploads_bucket = "uploads.somleng.org"
-  audio_bucket = "audio.somleng.org"
+  api_subdomain         = "api"
+  app_subdomain         = "app"
+  cdn_subdomain         = "cdn"
+  route53_zone          = data.terraform_remote_state.core.outputs.route53_zone
+  internal_route53_zone = data.terraform_remote_state.core.outputs.internal_route53_zone
 
-  vpc_cidr_block = data.terraform_remote_state.core_infrastructure.outputs.vpc.vpc_cidr_block
-  database_subnets = data.terraform_remote_state.core_infrastructure.outputs.vpc.database_subnets
-
-  ecs_worker_autoscale_min_instances = 1
-  ecs_worker_autoscale_max_instances = 4
+  app_identifier     = "open-ews"
+  app_environment    = "production"
+  cdn_certificate    = data.terraform_remote_state.core.outputs.cdn_certificate
+  global_accelerator = data.terraform_remote_state.core_infrastructure.outputs.global_accelerator
+  region             = data.terraform_remote_state.core_infrastructure.outputs.hydrogen_region
+  app_image          = data.terraform_remote_state.core.outputs.app_ecr_repository.this.repository_url
+  rds_cluster        = data.terraform_remote_state.core.outputs.rds_cluster
+  aws_region         = var.aws_region
+  uploads_bucket     = "uploads.open-ews.org"
+  db_name            = "scfm"
+  worker_min_tasks   = 1
+  worker_max_tasks   = 10
 }

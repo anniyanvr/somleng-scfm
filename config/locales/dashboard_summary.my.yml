@@ -1,0 +1,6 @@
+my:
+  dashboard_summary:
+    notifications_chart_title: "လွန်ခဲ့သော ၁၂ လအတွင်း ပေးပို့ခဲ့သည့် %{model_name}များ"
+    stats:
+      title: "%{model_name} စုစုပေါင်း"
+      description: "လွန်ခဲ့သော %{period} အတွင်း %{model_name} ကို %{action}ခဲ့သည်"

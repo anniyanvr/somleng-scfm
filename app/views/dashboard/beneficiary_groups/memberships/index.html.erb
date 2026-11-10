@@ -1,0 +1,33 @@
+<%= content_for(:page_title) do %>
+  <%= title(controller_name: :beneficiary_group_memberships, beneficiary_group: @beneficiary_group.name).html_safe %>
+<% end %>
+
+<%= content_for(:page_header) do %>
+  <%= title(controller_name: :beneficiary_group_memberships, beneficiary_group: link_to(@beneficiary_group.name, dashboard_beneficiary_group_path(@beneficiary_group))).html_safe %>
+<% end %>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-actions">
+     <%= render(
+        "shared/export_action",
+        disabled: @memberships.empty?,
+        export_params: { resource_type: "BeneficiaryGroupMembership", scoped_id: @beneficiary_group.id }
+      ) %>
+   </div>
+  </div>
+
+  <%= render("shared/table_data", collection: @memberships, headers: [:beneficiary, :beneficiary_phone_number, :created_at]) do |membership| %>
+    <td>
+      <%= link_to(membership.beneficiary_id, dashboard_beneficiary_path(membership.beneficiary_id)) %>
+    </td>
+    <td>
+      <%= format_phone_number(membership.beneficiary.phone_number) %>
+    </td>
+    <td>
+      <%= local_time(membership.created_at) %>
+    </td>
+  <% end %>
+
+  <%= render("shared/pagination", resources: @memberships) %>
+</div>

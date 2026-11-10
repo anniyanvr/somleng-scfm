@@ -2,15 +2,28 @@ require "rails_helper"
 require Rails.root.join("db/application_seeder")
 
 RSpec.describe ApplicationSeeder do
-  describe "#seed!" do
-    it "creates a super admin account" do
-      _existing_account = create(:account)
+  it "seeds the database" do
+    seeder = ApplicationSeeder.new
 
-      subject.seed!
+    seeder.seed!
 
-      super_admin_account = Account.with_permissions(:super_admin).first
-      expect(super_admin_account.access_tokens.count).to eq(1)
-      expect(Account.count).to eq(2)
-    end
+    expect(Account.count).to eq(1)
+    expect(Account.first).to have_attributes(
+      api_key: be_present,
+      users: contain_exactly(
+        have_attributes(
+          email: "user@example.com"
+        )
+      ),
+      supported_channels: contain_exactly("voice_call", "text_message", "audio")
+    )
+
+    seeder.seed!
+
+    expect(Account.count).to eq(1)
+    expect(User.count).to eq(1)
+    expect(Beneficiary.count).to eq(1)
+    expect(Doorkeeper::Application.count).to eq(1)
+    expect(WebhookEndpoint.count).to eq(1)
   end
 end

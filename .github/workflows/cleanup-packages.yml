@@ -1,0 +1,20 @@
+name: Cleanup Packages
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  cleanup_packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Delete Untagged Packages
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: "open-ews"
+          package-type: "container"
+          delete-only-untagged-versions: "true"

@@ -1,0 +1,81 @@
+<div class="card">
+  <%= simple_form_for [:dashboard, @beneficiary] do |f| %>
+    <div class="card-body">
+      <div class="row">
+        <div class="col">
+          <%= f.input :phone_number %>
+        </div>
+        <div class="col">
+          <%= f.input :iso_country_code, as: :country %>
+        </div>
+        <div class="col">
+          <%= f.input :gender %>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <%= f.input(
+            :iso_language_code,
+            label:
+              safe_join(
+                [
+                  f.label(:iso_language_code),
+                  link_to(
+                    "https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes",
+                    target: "_blank",
+                    rel: "noopener",
+                    style: "text-decoration: none;",
+                    aria: { label: "Help" }
+                  ) do
+                    content_tag(:i, "", class: "ti ti-info-circle")
+                  end
+                ], " "
+              )
+          ) %>
+        </div>
+        <div class="col">
+          <%= f.input :date_of_birth, html5: true %>
+        </div>
+        <div class="col">
+          <%= f.input :disability_status %>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <%= f.input(
+            :group_ids,
+            collection: current_account.beneficiary_groups,
+            multiple: true,
+            input_html: { class: "list-select" }
+          ) %>
+        </div>
+        <div class="col">
+        </div>
+        <div class="col">
+        </div>
+      </div>
+
+      <div class="hr-text">Addresses</div>
+
+      <div id="addresses">
+        <%= f.simple_fields_for :addresses do |addresses_form| %>
+          <%= render "dashboard/beneficiary_addresses/fields", form: addresses_form %>
+        <% end %>
+      </div>
+
+      <div class="text-center">
+        <%= link_to new_dashboard_beneficiary_address_path,
+                    class: "btn btn-outline-primary",
+                    title: "Add Address",
+                    data: { turbo_stream: true } do %>
+          <i class="icon ti ti-plus"></i>
+          Add Address
+        <% end %>
+      </div>
+    </div>
+
+    <div class="card-footer text-end">
+      <%= f.button :submit, class: 'btn btn-primary' %>
+    </div>
+  <% end %>
+</div>

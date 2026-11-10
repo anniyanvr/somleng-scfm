@@ -1,4 +1,11 @@
 class ApplicationRecord < ActiveRecord::Base
-  self.abstract_class = true
-  include TimestampQueryHelpers
+  extend Enumerize
+
+  include SerializableResource
+  include DecoratableResource
+  include ApproximateCount
+
+  primary_abstract_class
+
+  scope :latest_first, -> { order(id: :desc) }
 end

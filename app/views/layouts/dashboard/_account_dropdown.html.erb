@@ -1,0 +1,42 @@
+<div class="user-menu nav-item dropdown">
+  <a class="nav-link d-flex lh-1 p-0 px-2"
+     aria-label="Open user menu"
+     data-bs-toggle="dropdown"
+     href="#">
+    <span class="avatar avatar-sm" style="background-image: url('<%= user_profile_image_url(current_user) %>')"></span>
+    <div class="d-none d-xl-block ps-2">
+      <div>
+        <%= current_user.name %>
+      </div>
+      <div class="mt-1 small text-secondary">
+        <%= current_account.name %>
+      </div>
+    </div>
+  </a>
+
+  <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+    <%= link_to(dashboard_user_profile_path, class: "dropdown-item") do %>
+      <i class="icon ti ti-user"></i>
+      <%= title(controller_name: :profiles, action_name: :show) %>
+    <% end %>
+
+    <div class="dropdown-divider"></div>
+
+    <% if policy(current_account).manage? %>
+      <%= link_to(dashboard_settings_root_path, class: "dropdown-item") do %>
+        <i class="icon ti ti-settings"></i>
+        <%= title(controller_name: :settings, action_name: :index) %>
+      <% end %>
+    <% end %>
+
+    <%= button_to(
+      destroy_user_session_path,
+        class: "dropdown-item",
+        method: :delete,
+        form: { data: { turbo: false } }
+      ) do %>
+      <i class="icon ti ti-logout"></i>
+      <%= action(:sign_out) %>
+    <% end %>
+  </div>
+</div>

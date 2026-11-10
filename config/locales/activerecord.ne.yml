@@ -1,0 +1,48 @@
+---
+ne:
+  activerecord:
+    models:
+      beneficiary: "लाभग्राही"
+      broadcast: "अलर्ट"
+      notification: "सन्देश"
+      user: "प्रयोगकर्ता"
+    attributes:
+      beneficiary_group_membership:
+        created_at: "सदस्यता सुरु भएको मिति"
+
+  attributes:
+    group_ids: "समूहहरू"
+    delivery_attempts_count: "डेलिभरी प्रयासहरू"
+    name: "नाम"
+    locations: "स्थानहरू"
+    gender: "लिङ्ग"
+    disability_status: "अपाङ्गता स्थिति"
+    date_of_birth: "जन्म मिति"
+    iso_language_code: "ISO भाषा कोड"
+    iso_country_code: "देश"
+    target_areas: "लक्षित क्षेत्रहरू"
+    registered_locations: "दर्ता गरिएका स्थानहरू"
+    np:
+      iso_region_code: "ISO प्रदेश कोड"
+      administrative_division_level_2_code: "जिल्ला कोड"
+      administrative_division_level_2_name: "जिल्लाको नाम"
+      administrative_division_level_3_code: "स्थानीय तह कोड"
+      administrative_division_level_3_name: "स्थानीय तहको नाम"
+      administrative_division_level_4_code: "वडा कोड"
+      administrative_division_level_4_name: "वडाको नाम"
+      administrative_division_level_5_code: "टोल कोड"
+      administrative_division_level_5_name: "टोलको नाम"
+    beneficiary: "लाभग्राही"
+    channel: "च्यानल"
+    phone_number: "फोन नम्बर"
+    beneficiary_id: "लाभग्राही"
+    broadcast: "घोषणा"
+    broadcast_id: "घोषणा"
+    created_at: "सिर्जना मिति"
+    delivery_attempt: "डेलिभरी प्रयास"
+    delivery_attempt_id: "डेलिभरी प्रयास"
+    duration: "अवधि (सेकेन्ड)"
+    metadata: "अतिरिक्त जानकारी"
+    notification: "घोषणामा सहभागी"
+    notification_id: "घोषणामा सहभागी"
+    status: "स्थिति"

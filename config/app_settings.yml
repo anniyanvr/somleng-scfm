@@ -1,25 +1,42 @@
 default: &default
-  time_zone: "UTC"
-  mailer_sender: "support@somleng.org"
-  asset_url_host: "https://cdn-scfm.somleng.org"
-  secret_key_base: "<%= Rails.application.credentials.secret_key_base %>"
+  app_subdomain: <%= ENV.fetch("APP_SUBDOMAIN", "app") %>
+  api_subdomain: <%= ENV.fetch("API_SUBDOMAIN", "api") %>
+  mailer_sender: <%= ENV.fetch("MAILER_SENDER", "no-reply@open-ews.org") %>
+  app_url_host: <%= ENV.fetch("APP_URL_HOST", "https://app.open-ews.org") %>
+  asset_host: <%= ENV.fetch("ASSET_HOST", "https://app.open-ews.org") %>
   aws_sqs_high_priority_queue_name: <%= ENV.fetch("AWS_SQS_HIGH_PRIORITY_QUEUE_NAME", "high-priority") %>
   aws_sqs_default_queue_name: <%= ENV.fetch("AWS_SQS_DEFAULT_QUEUE_NAME", "default") %>
   aws_sqs_low_priority_queue_name: <%= ENV.fetch("AWS_SQS_LOW_PRIORITY_QUEUE_NAME", "low-priority") %>
   aws_sqs_scheduler_queue_name: <%= ENV.fetch("AWS_SQS_SCHEDULER_QUEUE_NAME", "scheduler") %>
+  aws_sqs_long_running_queue_name: <%= ENV.fetch("AWS_SQS_LONG_RUNNING_QUEUE_NAME", "long-running") %>
   aws_region: <%= ENV.fetch("AWS_DEFAULT_REGION", "ap-southeast-1") %>
-  uploads_bucket: <%= ENV.fetch("UPLOADS_BUCKET", "uploads.somleng.org") %>
-  audio_bucket: <%= ENV.fetch("AUDIO_BUCKET", "audio.somleng.org") %>
+  uploads_bucket: <%= ENV.fetch("UPLOADS_BUCKET", "uploads.open-ews.org") %>
+  audio_host: <%= ENV.fetch("AUDIO_HOST", "https://uploads.open-ews.org") %>
+  admin_username: "admin"
+  admin_password: "password"
+  active_record_encryption:
+    primary_key: YyTyCDLosQ8iNXtZM0kVYqtgAXLqSkPd
+    deterministic_key: fD6Wh7Lv53LcC4RBllJ027XbtJ2YxZPK
+    key_derivation_salt: y2WOH9JF2donmcXy5Oo8JDRZNsFOD1op
 
 production: &production
   <<: *default
-  default_url_host: "https://scfm.somleng.org"
   sentry_dsn: "<%= Rails.application.credentials.sentry_dsn %>"
+  admin_password: "<%= ENV.fetch("ADMIN_PASSWORD") { Rails.application.credentials.admin_password } %>"
+  active_record_encryption:
+    primary_key: "<%= ENV.fetch("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY") { Rails.application.credentials.dig(:active_record_encryption, :primary_key) } %>"
+    deterministic_key: "<%= ENV.fetch("ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY") { Rails.application.credentials.dig(:active_record_encryption, :deterministic_key) } %>"
+    key_derivation_salt: "<%= ENV.fetch("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT") { Rails.application.credentials.dig(:active_record_encryption, :key_derivation_salt) } %>"
+
+staging:
+  <<: *production
+  app_url_host: <%= ENV.fetch("APP_URL_HOST", "https://app-staging.open-ews.org") %>
+  api_subdomain: <%= ENV.fetch("API_SUBDOMAIN", "api-staging") %>
 
 development: &development
-  <<: *production
-  default_url_host: "http://localhost:3000"
+  <<: *default
+  app_url_host: "http://app.lvh.me:3000"
 
 test:
   <<: *development
-  default_url_host: https://scfm.somleng.org
+  app_url_host: "http://app.lvh.me"
